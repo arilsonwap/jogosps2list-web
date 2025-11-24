@@ -15,15 +15,6 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
-/* ------------------------------------------------------------------
-   ✅ Extensão de tipos para suportar "position: fixed" no React Native Web
------------------------------------------------------------------- */
-declare module "react-native" {
-  interface ViewStyle {
-    position?: "absolute" | "relative" | "static" | "fixed";
-  }
-}
-
 export type PenDriveInfo = {
   tamanho?: number;
   real?: number;
