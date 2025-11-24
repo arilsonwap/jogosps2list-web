@@ -73,6 +73,10 @@ const JogoItem = React.memo(
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           style={[styles.item, selecionado && { backgroundColor: "#1e90ff55" }]}
+          accessibilityLabel={`${nomeFormatado} ${bandeira}, ${item.tamanho_gb} GB`}
+          accessibilityHint={selecionado ? "Toque para desmarcar" : "Toque para selecionar"}
+          accessibilityRole="button"
+          accessibilityState={{ selected: selecionado }}
         >
           {mostrarCapas &&
             (item.capa_url ? (
@@ -105,7 +109,13 @@ const JogoItem = React.memo(
 
             <View style={styles.bottomRow}>
               <Text style={styles.tamanho}>{item.tamanho_gb} GB</Text>
-              <TouchableOpacity style={styles.olhoButton} onPress={handleOpenDetail}>
+              <TouchableOpacity
+                style={styles.olhoButton}
+                onPress={handleOpenDetail}
+                accessibilityLabel="Ver detalhes do jogo"
+                accessibilityHint="Abre uma tela com informações e capa do jogo"
+                accessibilityRole="button"
+              >
                 <Ionicons name="eye-outline" size={18} color="#fff" />
               </TouchableOpacity>
             </View>
@@ -124,15 +134,23 @@ export default function HomeScreen() {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [jogoDetalhe, setJogoDetalhe] = useState<JogoPS2 | null>(null);
   const [jogosFirebase, setJogosFirebase] = useState<JogoPS2[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [tamanhoPenDrive, setTamanhoPenDrive] = useState<number>(0);
 
   /* ---- Buscar novos jogos do Firestore ---- */
   useEffect(() => {
     (async () => {
+      setLoading(true);
+      setError(null);
       try {
         const novos = await getJogosNovos();
         setJogosFirebase(novos);
       } catch (err) {
         console.error("Erro ao carregar jogos Firebase:", err);
+        setError("Erro ao carregar jogos do servidor. Exibindo apenas jogos locais.");
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
@@ -190,6 +208,12 @@ export default function HomeScreen() {
     return soma.toFixed(2);
   }, [selecionadosSet, roms]);
 
+  /* ---- Verifica se ultrapassou o tamanho do pen drive ---- */
+  const ultrapassou = useMemo(() => {
+    if (tamanhoPenDrive === 0) return false;
+    return parseFloat(totalGB) > tamanhoPenDrive;
+  }, [totalGB, tamanhoPenDrive]);
+
   /* ---- UI ---- */
   const renderItem = useCallback(
     ({ item }: { item: JogoPS2 }) => (
@@ -224,17 +248,37 @@ export default function HomeScreen() {
           placeholderTextColor="#999"
           value={buscaInput}
           onChangeText={setBuscaInput}
+          accessibilityLabel="Campo de busca de jogos"
+          accessibilityHint="Digite o nome do jogo que você deseja encontrar"
         />
         {selecionados.length > 0 && (
-          <TouchableOpacity onPress={limparSelecao}>
+          <TouchableOpacity
+            onPress={limparSelecao}
+            accessibilityLabel="Limpar seleção"
+            accessibilityHint="Remove todos os jogos selecionados"
+            accessibilityRole="button"
+          >
             <Ionicons name="trash-outline" size={20} color="#fff" />
           </TouchableOpacity>
         )}
       </View>
 
+      {loading && (
+        <View style={styles.statusMessage}>
+          <Text style={styles.statusText}>⏳ Carregando jogos do servidor...</Text>
+        </View>
+      )}
+
+      {error && (
+        <View style={[styles.statusMessage, styles.errorMessage]}>
+          <Ionicons name="warning-outline" size={16} color="#ff6b6b" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
       <FlatList
         data={filtrados}
-        keyExtractor={(item) => item.nome}
+        keyExtractor={(item, index) => `${item.nome}-${index}`}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
@@ -275,7 +319,13 @@ export default function HomeScreen() {
             <Text style={styles.modalDesc}>
               {jogoDetalhe.descricao || "Sem descrição disponível."}
             </Text>
-            <TouchableOpacity onPress={() => setJogoDetalhe(null)} style={styles.modalCloseBtn}>
+            <TouchableOpacity
+              onPress={() => setJogoDetalhe(null)}
+              style={styles.modalCloseBtn}
+              accessibilityLabel="Fechar detalhes"
+              accessibilityHint="Fecha a janela de detalhes do jogo"
+              accessibilityRole="button"
+            >
               <Ionicons name="close" size={22} color="#fff" />
               <Text style={styles.modalCloseText}>Fechar</Text>
             </TouchableOpacity>
@@ -287,7 +337,7 @@ export default function HomeScreen() {
       <FloatingPanel
         totalGB={totalGB}
         quantidade={selecionados.length}
-        ultrapassou={false}
+        ultrapassou={ultrapassou}
         selecionados={roms
           .filter((j) => selecionadosSet.has(j.nome))
           .map((j) => ({
@@ -295,7 +345,7 @@ export default function HomeScreen() {
             tamanho_gb: j.tamanho_gb,
             bandeira: formatarNome(j.nome).bandeira,
           }))}
-        onPenDriveChange={() => {}}
+        onPenDriveChange={setTamanhoPenDrive}
       />
     </LinearGradient>
   );
@@ -322,6 +372,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   input: { flex: 1, color: "#fff", marginLeft: 6, fontSize: 15, paddingVertical: 6 },
+  statusMessage: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1e3a5f",
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    gap: 6,
+  },
+  statusText: { color: "#aad", fontSize: 13 },
+  errorMessage: { backgroundColor: "#3a1e1e" },
+  errorText: { color: "#ff6b6b", fontSize: 13, marginLeft: 6 },
   item: {
     flexDirection: "row",
     alignItems: "center",
