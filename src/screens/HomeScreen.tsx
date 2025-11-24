@@ -16,7 +16,7 @@ import { Image as ExpoImage } from "expo-image";
 import romsData from "../../roms_ps2_unido.json";
 import { getJogosNovos } from "../services/FirestoreService.web";
 import { capasMap } from "../data/capasMap";
-import FloatingPanel from "../components/FloatingPanel";
+import FloatingPanel, { type PenDriveInfo } from "../components/FloatingPanel";
 
 /* ---------------- Tipagem ---------------- */
 interface JogoPS2 {
@@ -215,12 +215,9 @@ export default function HomeScreen() {
   }, [totalGB, tamanhoPenDrive]);
 
   /* ---- Callback para mudança de pen drive ---- */
-  const handlePenDriveChange = useCallback(
-    (info: { tamanho?: number; real?: number } | null) => {
-      setTamanhoPenDrive(info?.real || 0);
-    },
-    []
-  );
+  const handlePenDriveChange = useCallback((info: PenDriveInfo) => {
+    setTamanhoPenDrive(info?.real || 0);
+  }, []);
 
   /* ---- UI ---- */
   const renderItem = useCallback(

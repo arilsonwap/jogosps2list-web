@@ -24,11 +24,18 @@ declare module "react-native" {
   }
 }
 
+export type PenDriveInfo = {
+  tamanho?: number;
+  real?: number;
+} | null;
+
+export type OnPenDriveChange = (info: PenDriveInfo) => void;
+
 interface FloatingPanelProps {
   totalGB: string;
   quantidade: number;
   ultrapassou?: boolean;
-  onPenDriveChange?: (info: { tamanho?: number; real?: number } | null) => void;
+  onPenDriveChange?: OnPenDriveChange;
   selecionados?: { nome: string; tamanho_gb: number; bandeira?: string }[];
 }
 
