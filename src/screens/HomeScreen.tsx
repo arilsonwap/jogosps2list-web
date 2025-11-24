@@ -214,6 +214,14 @@ export default function HomeScreen() {
     return parseFloat(totalGB) > tamanhoPenDrive;
   }, [totalGB, tamanhoPenDrive]);
 
+  /* ---- Callback para mudança de pen drive ---- */
+  const handlePenDriveChange = useCallback(
+    (info: { tamanho?: number; real?: number } | null) => {
+      setTamanhoPenDrive(info?.real || 0);
+    },
+    []
+  );
+
   /* ---- UI ---- */
   const renderItem = useCallback(
     ({ item }: { item: JogoPS2 }) => (
@@ -345,7 +353,7 @@ export default function HomeScreen() {
             tamanho_gb: j.tamanho_gb,
             bandeira: formatarNome(j.nome).bandeira,
           }))}
-        onPenDriveChange={setTamanhoPenDrive}
+        onPenDriveChange={handlePenDriveChange}
       />
     </LinearGradient>
   );
